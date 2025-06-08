@@ -8,7 +8,7 @@ It offers basic endpoints for system health checks and task management, and is p
 ### 🛠 How to Run Locally
 
 ```bash
-uvicorn src.main:app --reload --port 8001
+uvicorn src.main:app --reload --port 8002
 ```
 
 ---
