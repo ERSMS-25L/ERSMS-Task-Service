@@ -1,14 +1,63 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-import os
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.pool import StaticPool
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+from src.config import settings
 
-DATABASE_URL = os.getenv("DATABASE_URL")  # lo tienes definido en docker-compose
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=settings.DEBUG,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    pool_size=10,
+    max_overflow=20,
+)
 
-engine = create_async_engine(DATABASE_URL, echo=True)
-async_session = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autoflush=False,
+    autocommit=False,
+)
 
-async def get_session() -> AsyncSession:
-    async with async_session() as session:
-        yield session
+Base = declarative_base()
 
 
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    """Dependency to get database session"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+@asynccontextmanager
+async def get_db_session():
+    """Context manager for database session"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+async def create_tables():
+    """Create all tables"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def drop_tables():
+    """Drop all tables"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)

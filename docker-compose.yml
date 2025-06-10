@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-tasks
+    environment:
+      POSTGRES_DB: tasks_db
+      POSTGRES_USER: tasks_user
+      POSTGRES_PASSWORD: tasks_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tasks_user -d tasks_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  task-service:
+    build: .
+    container_name: task-service
+    ports:
+      - "8002:8002"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://tasks_user:tasks_password@postgres:5432/tasks_db
+      - SERVICE_NAME=task-service
+      - SERVICE_PORT=8002
+      - DEBUG=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./service-account.json:/app/service-account.json
+      - ./.env:/app/.env
+
+volumes:
+  postgres_data:

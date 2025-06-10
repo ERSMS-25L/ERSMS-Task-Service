@@ -1,7 +1,19 @@
-fastapi
-uvicorn
-sqlalchemy[asyncio]
-requests
-python-multipart
-asyncpg
-pydantic
+fastapi==0.115.12
+uvicorn==0.34.3
+SQLAlchemy==2.0.41
+asyncpg==0.30.0
+python-multipart==0.0.20
+pydantic==2.11.5
+PyJWT==2.10.1
+python-decouple==3.8
+httpx==0.28.1
+pytest==8.3.4
+pytest-asyncio==0.25.0
+greenlet==3.2.3
+
+# uvicorn[standard]==0.24.0
+firebase-admin==6.2.0
+python-jose[cryptography]==3.3.0
+psycopg2-binary==2.9.7  # for PostgreSQL
+# sqlalchemy==2.0.23      # if using SQLAlchemy
+alembic==1.12.1         # for database migrations
